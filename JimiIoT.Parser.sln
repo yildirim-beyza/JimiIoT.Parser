@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JimiIoT.Parser", "JimiIoT.Parser\JimiIoT.Parser.csproj", "{D0761DA5-E141-4F06-B062-21DB4950AD33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JimiIoT.Parser.Tests", "JimiIoT.Parser.Tests\JimiIoT.Parser.Tests.csproj", "{99CCF852-3474-490A-A27D-30581927EBDC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D0761DA5-E141-4F06-B062-21DB4950AD33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0761DA5-E141-4F06-B062-21DB4950AD33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0761DA5-E141-4F06-B062-21DB4950AD33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0761DA5-E141-4F06-B062-21DB4950AD33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99CCF852-3474-490A-A27D-30581927EBDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99CCF852-3474-490A-A27D-30581927EBDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99CCF852-3474-490A-A27D-30581927EBDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99CCF852-3474-490A-A27D-30581927EBDC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
