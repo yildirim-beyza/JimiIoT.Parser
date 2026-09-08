@@ -9,7 +9,7 @@ namespace JimiIoT.Parser;
 // ============================================================================
 // JimiDeviceDataParser
 // ----------------------------------------------------------------------------
-// BU DOSYA PROJENİN ANA SINIFIDIR.
+// PROJENİN ANA SINIFI.
 //
 // Erişim yapısı şu şekildedir:
 //   public  DeviceInfoModel GetDeviceInfo(string deviceData)
@@ -147,7 +147,8 @@ public class JimiDeviceDataParser
 
             case JimiProtocolNumbers.Status:
                 {
-                    InputDataModel inputData = GetInputData(frame);
+                    InputDataModel inputData =
+                        GetInputData(_protocolParser.ParseStatus(frame));
 
                     result.InputData = inputData;
 
@@ -160,7 +161,8 @@ public class JimiDeviceDataParser
 
             case JimiProtocolNumbers.Heartbeat:
                 {
-                    InputDataModel inputData = GetInputData(frame);
+                    InputDataModel inputData =
+                        GetInputData(_protocolParser.ParseStatus(frame));
 
                     result.InputData = inputData;
 
@@ -203,7 +205,8 @@ public class JimiDeviceDataParser
 
             case JimiProtocolNumbers.StringMessage:
                 {
-                    string ccid = GetParsedCCID(frame);
+                    string ccid =
+                        GetParsedCCID(_protocolParser.ParseIccid(frame));
 
                     result.CCID =
                         string.IsNullOrEmpty(ccid) ? null : ccid;
@@ -213,7 +216,8 @@ public class JimiDeviceDataParser
 
             case JimiProtocolNumbers.Info:
                 {
-                    string ccid = GetParsedCCID(frame);
+                    string ccid =
+                        GetParsedCCID(_protocolParser.ParseIccid(frame));
 
                     result.CCID =
                         string.IsNullOrEmpty(ccid) ? null : ccid;
@@ -301,18 +305,29 @@ public class JimiDeviceDataParser
         {
             case Jt808ProtocolNumbers.ParameterQueryResponse:
             {
-                // VL502/VG502 V1.1.1 kapsamında 0x0104 gelen parametre yanıtıdır.
-                // Shared profile eligibility her iki doğrulanmış model için etkindir.
-                // Giden 0x8106 sorgusunun üretilmesi üst entegrasyon katmanının
-                // sorumluluğundadır ve bu kütüphanede uygulanmaz.
-                if (useJimiVehicleProfile)
-                {
-                    result.CCID = _jimiJt808VehicleDataProfileParser.ParseIccidParameterResponse(frame);
-                    string vin = GetParsedVIN(_jimiJt808VehicleDataProfileParser.ParseVinParameterResponse(frame));
-                    result.VIN = string.IsNullOrEmpty(vin) ? null : vin;
-                }
+                    // VL502/VG502 V1.1.1 kapsamında 0x0104 gelen parametre yanıtıdır.
+                    // Shared profile eligibility her iki doğrulanmış model için etkindir.
+                    // Giden 0x8106 sorgusunun üretilmesi üst entegrasyon katmanının
+                    // sorumluluğundadır ve bu kütüphanede uygulanmaz.
+                    if (useJimiVehicleProfile)
+                    {
+                        string ccid =
+                            GetParsedCCID(
+                                _jimiJt808VehicleDataProfileParser
+                                    .ParseIccidParameterResponse(frame));
 
-                break;
+                        result.CCID =
+                            string.IsNullOrEmpty(ccid) ? null : ccid;
+
+                        string vin =
+                            GetParsedVIN(
+                                _jimiJt808VehicleDataProfileParser
+                                    .ParseVinParameterResponse(frame));
+
+                        result.VIN =
+                            string.IsNullOrEmpty(vin) ? null : vin;
+                    }
+                    break;
             }
 
             case Jt808ProtocolNumbers.Register:
@@ -331,21 +346,26 @@ public class JimiDeviceDataParser
 
             case Jt808ProtocolNumbers.Location:
             {
-                // Standart 0x0200 çekirdeği modelden bağımsız parser'da kalır.
-                ParsedGpsMessage parsedGps = _jt808ProtocolParser.ParseLocation(frame);
-                InputDataModel input = _jt808ProtocolParser.ParseInputData(frame);
+                    // Standart 0x0200 çekirdeği modelden bağımsız parser'da kalır.
+                    ParsedGpsMessage parsedGps =
+                        _jt808ProtocolParser.ParseLocation(frame);
 
-                result.GpsData = GetParsedGpsData(parsedGps);
-                result.DateData = GetParsedDateData(parsedGps);
-                result.InputData = input;
-                if (input.IsIgnitionOn.HasValue)
-                    result.VehicleStatus = GetVehicleStatus(input.IsIgnitionOn.Value);
+                    InputDataModel input =
+                        GetInputData(_jt808ProtocolParser.ParseInputData(frame));
 
-                // 0xE8, VL502/VG502 V1.1.1 sözleşmesine ait üretici-özel bir uzantıdır;
-                // genel JT/T 808 standardının bir alanı değildir.
-                // Shared profile yalnız VL502/VG502 eligibility altında etkindir.
-                // 0x30 sinyal gücü alanı bilinçli olarak 2G/4G çıkarmak için kullanılmaz.
-                if (useJimiVehicleProfile)
+                    result.GpsData = GetParsedGpsData(parsedGps);
+                    result.DateData = GetParsedDateData(parsedGps);
+                    result.InputData = input;
+
+                    if (input.IsIgnitionOn.HasValue)
+                        result.VehicleStatus =
+                            GetVehicleStatus(input.IsIgnitionOn.Value);
+                    
+                    // 0xE8, VL502/VG502 V1.1.1 sözleşmesine ait üretici-özel bir uzantıdır;
+                    // genel JT/T 808 standardının bir alanı değildir.
+                    // Shared profile yalnız VL502/VG502 eligibility altında etkindir.
+                    // 0x30 sinyal gücü alanı bilinçli olarak 2G/4G çıkarmak için kullanılmaz.
+                    if (useJimiVehicleProfile)
                 {
                     string operatorStatus = GetParsedOperatorCellularStatus(frame);
                     result.OperatorCellularStatus =
@@ -371,20 +391,30 @@ public class JimiDeviceDataParser
 
                 if (subtype == Jt808ProtocolNumbers.ObdSubtype)
                 {
-                    OBDDataModel obdData = GetParsedObdData(frame);
-                    InputDataModel? input = _jimiJt808VehicleDataProfileParser.ParseInputData(frame, obdData);
-                    JimiJt808VehicleEnergyData vehicleEnergy =
-                        _jimiJt808VehicleDataProfileParser.ParseVehicleEnergy(frame);
-                    ParsedGpsMessage? gps = _jimiJt808VehicleDataProfileParser.ParseTransparentGps(frame, obdData);
+                        OBDDataModel obdData = GetParsedObdData(frame);
 
-                    result.OBDData = obdData;
-                    if (input is not null)
-                    {
-                        result.InputData = input;
-                        if (input.IsIgnitionOn.HasValue)
-                            result.VehicleStatus = GetVehicleStatus(input.IsIgnitionOn.Value);
-                    }
-                    result.DateData = new DateDataModel { DeviceTimeUtc = obdData.DeviceTimeUtc };
+                        InputDataModel? parsedInput =
+                            _jimiJt808VehicleDataProfileParser.ParseInputData(frame, obdData);
+
+                        JimiJt808VehicleEnergyData vehicleEnergy =
+                            _jimiJt808VehicleDataProfileParser.ParseVehicleEnergy(frame);
+
+                        ParsedGpsMessage? gps =
+                            _jimiJt808VehicleDataProfileParser.ParseTransparentGps(frame, obdData);
+
+                        result.OBDData = obdData;
+
+                        if (parsedInput is not null)
+                        {
+                            InputDataModel input = GetInputData(parsedInput);
+
+                            result.InputData = input;
+
+                            if (input.IsIgnitionOn.HasValue)
+                                result.VehicleStatus =
+                                    GetVehicleStatus(input.IsIgnitionOn.Value);
+                        }
+                        result.DateData = new DateDataModel { DeviceTimeUtc = obdData.DeviceTimeUtc };
 
                     if (vehicleEnergy.VehicleElectricalVoltageV.HasValue)
                         result.BatteryVoltage = GetParsedBatteryVoltage(vehicleEnergy);
@@ -402,18 +432,26 @@ public class JimiDeviceDataParser
                 }
                 else if (subtype == Jt808ProtocolNumbers.DtcSubtype)
                 {
-                    result.DTCFaultCodes = GetParsedDTCFaultCodes(frame);
-                    InputDataModel? input = _jimiJt808VehicleDataProfileParser.ParseInputData(frame);
-                    ParsedGpsMessage? gps = _jimiJt808VehicleDataProfileParser.ParseTransparentGps(frame);
+                        result.DTCFaultCodes = GetParsedDTCFaultCodes(frame);
 
-                    if (input is not null)
-                    {
-                        result.InputData = input;
-                        if (input.IsIgnitionOn.HasValue)
-                            result.VehicleStatus = GetVehicleStatus(input.IsIgnitionOn.Value);
-                    }
+                        InputDataModel? parsedInput =
+                            _jimiJt808VehicleDataProfileParser.ParseInputData(frame);
 
-                    if (gps is not null)
+                        ParsedGpsMessage? gps =
+                            _jimiJt808VehicleDataProfileParser.ParseTransparentGps(frame);
+
+                        if (parsedInput is not null)
+                        {
+                            InputDataModel input = GetInputData(parsedInput);
+
+                            result.InputData = input;
+
+                            if (input.IsIgnitionOn.HasValue)
+                                result.VehicleStatus =
+                                    GetVehicleStatus(input.IsIgnitionOn.Value);
+                        }
+                        
+                        if (gps is not null)
                     {
                         result.GpsData = GetParsedGpsData(gps);
                         result.DateData = GetParsedDateData(gps);
@@ -452,9 +490,10 @@ public class JimiDeviceDataParser
     // PRIVATE METOTLAR
     // ========================================================================
 
-    private InputDataModel GetInputData(DeviceFrame frame)
+    private InputDataModel GetInputData(InputDataModel parsedInput)
     {
-        return _protocolParser.ParseStatus(frame);
+        ArgumentNullException.ThrowIfNull(parsedInput);
+        return parsedInput;
     }
 
     private OBDDataModel GetParsedObdData(Jt808Frame frame)
@@ -471,9 +510,9 @@ public class JimiDeviceDataParser
         return parsedVin ?? string.Empty;
     }
 
-    private string GetParsedCCID(DeviceFrame frame)
+    private string GetParsedCCID(string? parsedCcid)
     {
-        return _protocolParser.ParseIccid(frame) ?? string.Empty;
+        return IccidValidator.Normalize(parsedCcid) ?? string.Empty;
     }
 
     private string GetParsedOperatorCellularStatus(Jt808Frame frame)

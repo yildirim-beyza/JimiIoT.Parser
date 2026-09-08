@@ -104,6 +104,11 @@ Birleştirilmemiş subpackage veya şifreli JT/T 808 body bilinçli olarak redde
 
 `GetDeviceInfo` public giriş metodudur. Diğer görev metotları ana sınıfın private akışında kullanılır.
 
+Protokole özgü byte/frame çözümleme ilgili parser katmanlarında kalır; ortak semantic sonuçlar ise görev sözleşmesindeki named helper'lar üzerinden facade akışına alınır:
+
+- JIMI `0x13/0x23`, generic JT/T 808 `0x0200` ve VL502/VG502 transparent status yollarında üretilen `InputDataModel` sonuçları `GetInputData` üzerinden geçirilir.
+- JIMI `0x15/0x94` ve VL502/VG502 shared JT/T 808 `0x0104/F007` yollarında çözülen ICCID sonuçları `GetParsedCCID` üzerinden geçirilir.
+
 ## 4. Public çıktı modeli
 
 `GetDeviceInfo` bir `DeviceInfoModel` döndürür. Her mesaj bütün alanları taşımadığı için alanların çoğu nullable'dır.
@@ -138,6 +143,8 @@ Generic JIMI tarafında desteklenen temel işlemler:
 - `0x13` / `0x23` status çözümü
 - `0x15` String Message üzerinden doğrulanmış ICCID
 - `0x94/0A` Info yolu üzerinden ICCID
+
+JIMI tarafında status/heartbeat çözümünden çıkan `InputDataModel`, `GetInputData` üzerinden; `0x15` / `0x94` yollarından çözülen ICCID ise `GetParsedCCID` üzerinden ortak `DeviceInfoModel` sonucuna taşınır.
 
 Kod içinde ayrıca bazı generic/reference decoder'lar bulunur:
 
@@ -175,7 +182,7 @@ Ancak bir decoder'ın kodda bulunması, o alanın bütün JIMI modelleri için p
 - standard `0x0200` location/status/time alanları
 - `0x31` satellite count extension
 
-Generic `0x0200` konum çözümü için VL502 veya VG502 seçmek gerekmez.
+Generic `0x0200` konum çözümü için VL502 veya VG502 seçmek gerekmez. `0x0200` status alanından çözülen `InputDataModel`, facade içinde `GetInputData` üzerinden ortak çıktıya alınır.
 
 Generic JT/T 808 `0x61` / `0x69` voltage yardımcıları public vehicle battery kaynağı olarak kullanılmaz.
 
@@ -206,6 +213,8 @@ Shared profile şu yolları işler:
 - `0x0900 / F0 / 0x02` DTC
 - `0x0900 / F0 / 0x0B` VIN
 - F0 transparent tail içindeki status ve GPS
+
+Shared profile byte-level çözümlemeyi kendi katmanında yapar; facade tarafında transparent status sonucu `GetInputData`, `0x0104/F007` ICCID sonucu ise `GetParsedCCID` üzerinden ortak semantic akışa alınır.
 
 Shared V1.1.1 profile, JT/T 808-2013 tipindeki 6-byte Terminal SN sözleşmesine dayanır. Decoder generic 2019 header'ı okuyabilse de VL502/VG502 shared profile içinde 2019 versioned header kabul edilmez.
 
@@ -353,7 +362,7 @@ Desteklenen yollar:
 - `0x15` String Message
 - `0x94/0A` Info
 
-ICCID doğrulama katmanından geçmeden public sonuca aktarılmaz.
+ICCID önce `JimiProtocolParser` tarafından çözülür, ardından ortak `GetParsedCCID` helper'ından geçirilerek public `CCID` alanına taşınır. Geçersiz değer public sonuca aktarılmaz.
 
 ### VL502 / VG502 — `0x0104 / F007`
 
@@ -365,7 +374,7 @@ Shared profile'da ICCID, registration mesajından alınmaz.
 IMEI:...;IMSI:...;ICCID:...;
 ```
 
-Token sırasına güvenilmez. `ICCID:` değeri doğrulandıktan sonra public `CCID` alanına yazılır.
+Token sırasına güvenilmez. `ICCID:` değeri shared profile parser tarafından çözüldükten sonra ortak `GetParsedCCID` helper'ından geçirilir ve geçerliyse public `CCID` alanına yazılır.
 
 `F007` yoksa, parametre gövdesi bozuksa veya ICCID geçersizse sonuç `null` olur.
 
@@ -528,7 +537,7 @@ Aktif model-özel production profile durumu:
 | `VL802` | generic protokol davranışı; doğrulanmış shared vehicle profile yok |
 | `Unknown` | yalnız güvenli generic davranış; model-özel mapping yok |
 
-Bir modelin tabloda bulunması, o model için bütün 13 public verinin desteklendiği anlamına gelmez. Semantic mapping yalnız kanıtlı protokol yollarında etkinleştirilir.
+Bir modelin tabloda bulunması, proje isterindeki tüm hedef parser çıktılarının o model için desteklendiği anlamına gelmez. Semantic mapping yalnız kanıtlı protokol yollarında etkinleştirilir.
 
 ## 17. Bilinçli sınırlar
 
@@ -556,7 +565,7 @@ Test suite şu konuları kapsar:
 - IMEI
 - GPS ve tarih
 - status / vehicle status
-- public 13-method contract
+- proje isterindeki 13 metot sözleşmesi
 - model enum contract
 - VL502/VG502 shared profile eligibility
 - registration VIN
@@ -594,7 +603,7 @@ PASSED: 166
 FAILED: 0
 ```
 
-Bu README hazırlanırken kullanılan çalışma ortamında `dotnet` kurulu olmadığı için testler burada yeniden çalıştırılmış gibi gösterilmemiştir. Yukarıdaki runtime sonucu kullanıcı execution evidence'ıdır.
+`GetInputData` ve `GetParsedCCID` call-path'lerini ortaklaştıran son refactor sonrasında test suite kullanıcı tarafından gerçek .NET 7 ortamında yeniden çalıştırılmış ve **166/166 PASS, 0 FAIL** sonucu korunmuştur.
 
 ## 20. Proje yapısı
 

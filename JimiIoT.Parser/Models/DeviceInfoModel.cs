@@ -5,9 +5,8 @@ namespace JimiIoT.Parser.Models;
 // ----------------------------------------------------------------------------
 // Public giriş metodu GetDeviceInfo(...) TEK bir complete frame işler. Frame
 // JIMI Protocol veya JT/T 808 olabilir. Mesajlar bütün alanları aynı anda
-// taşımaz; bu yüzden bu modeldeki
-// alanların çoğu nullable'dır. Hangi protokol mesajı geldiyse yalnızca o
-// mesajın sağlayabildiği alanlar doldurulur.
+// taşımaz; bu yüzden bu modeldeki alanların çoğu nullable'dır.
+// Hangi protokol mesajı geldiyse yalnızca o mesajın sağlayabildiği alanlar doldurulur.
 // ============================================================================
 public class DeviceInfoModel
 {
