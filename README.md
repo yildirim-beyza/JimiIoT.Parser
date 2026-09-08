@@ -625,9 +625,14 @@ JimiIoT.Parser/
 │   └── Jt808FrameDecoder.cs
 ├── Models/
 ├── Protocols/
-│   ├── JimiProtocolParser.cs
+|   ├── InfoMessageData.cs
+│   ├── JimiProtocolNumbers.cs
+|   ├── JimiProtocolParser.cs
+│   ├── Jt808ProtocolNumbers.cs
 │   ├── Jt808ProtocolParser.cs
-│   ├── ProtocolResolver.cs
+|   ├── ParsedGpsMessage.cs
+|   ├── ProtocolResolver.cs
+|   ├── ProtocolType.cs
 │   └── Profiles/
 │       ├── JimiJt808VehicleDataContext.cs
 │       ├── JimiJt808VehicleDataProfileParser.cs
